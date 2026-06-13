@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getBills, deleteBill } from '../services/api';
+import { getBills, deleteBill, uploadInvoiceFile } from '../services/api';
 import { InvoiceView } from './Billing';
 import { useAuth } from '../context/AuthContext';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export default function Invoices() {
   const { user } = useAuth();
@@ -10,6 +12,7 @@ export default function Invoices() {
   const [filterPay, setFilterPay]       = useState('All');
   const [selectedInv, setSelectedInv]   = useState(null);
   const [loading, setLoading]           = useState(true);
+  const [sharing, setSharing]           = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,17 +47,162 @@ export default function Invoices() {
     grandTotal  : inv.amount,
   });
 
-  const handleWhatsApp = (inv) => {
-    const li = (inv.lineItems || []);
-    const lines = li.length
-      ? li.map(it => `• ${it.name} x${it.qty} @ ₹${Number(it.rate).toLocaleString('en-IN')} = ₹${(it.qty * Number(it.rate)).toLocaleString('en-IN')}`).join('\n')
-      : `Total items: ${inv.items}`;
-    const msg = `🌸 *Anyaa Textiles* 🌸\nInvoice: *${inv.id}*\nDate: ${inv.date || ''}\nCustomer: ${inv.customer}\n\n${lines}\n\n*Total: ₹${Number(inv.amount).toLocaleString('en-IN')}*\nPayment: ${inv.payment}\n\nThank you for shopping! 💐`;
-    const ph = (inv.phone || '').replace(/\D/g, '');
-    window.open(ph ? `https://wa.me/91${ph}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  const handleWhatsApp = async (inv) => {
+    setSharing('pdf');
+    try {
+      const file = await generateInvoiceFile(inv, 'pdf');
+      let fileUrl = '';
+      if (file) {
+        try {
+          const uploadRes = await uploadInvoiceFile(file);
+          if (uploadRes.data && uploadRes.data.link) {
+            fileUrl = uploadRes.data.link.startsWith('http')
+              ? uploadRes.data.link
+              : `http://localhost:3001${uploadRes.data.link}`;
+          }
+        } catch (uploadErr) {
+          console.error('Failed to upload PDF:', uploadErr);
+        }
+      }
+
+      const li = (inv.lineItems || []);
+      const lines = li.length
+        ? li.map(it => `• ${it.name} x${it.qty} @ ₹${Number(it.rate).toLocaleString('en-IN')} = ₹${(it.qty * Number(it.rate)).toLocaleString('en-IN')}`).join('\n')
+        : `Total items: ${inv.items}`;
+      let msg = `🌸 *Anyaa Textiles* 🌸\nInvoice: *${inv.id}*\nDate: ${inv.date || ''}\nCustomer: ${inv.customer}\n\n${lines}\n\n*Total: ₹${Number(inv.amount).toLocaleString('en-IN')}*\nPayment: ${inv.payment}\n\nThank you for shopping! 💐`;
+      
+      if (fileUrl) {
+        msg += `\n\nView the invoice: ${fileUrl}`;
+      }
+
+      const ph = (inv.phone || '').replace(/\D/g, '');
+      window.open(ph ? `https://wa.me/91${ph}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to send invoice via WhatsApp.');
+    }
+    setSharing(null);
+  };
+
+  const handleTableWhatsApp = async (inv) => {
+    setSelectedInv(inv);
+    setTimeout(async () => {
+      const element = document.getElementById('printable-invoice');
+      if (element) {
+        await handleWhatsApp(inv);
+        setSelectedInv(null);
+      }
+    }, 300);
   };
 
   const handlePrint = () => window.print();
+
+  const generateInvoiceFile = async (inv, format) => {
+    const element = document.getElementById('printable-invoice');
+    if (!element) return null;
+    
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+    
+    if (format === 'image') {
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(new File([blob], `invoice-${inv.id}.png`, { type: 'image/png' }));
+        }, 'image/png');
+      });
+    } else if (format === 'pdf') {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      const pdfBlob = pdf.output('blob');
+      return new File([pdfBlob], `invoice-${inv.id}.pdf`, { type: 'application/pdf' });
+    }
+  };
+
+  const handleShareFile = async (inv, format) => {
+    setSharing(format);
+    try {
+      const file = await generateInvoiceFile(inv, format);
+      if (!file) {
+        setSharing(null);
+        return;
+      }
+
+      // Upload file to local server
+      let fileUrl = '';
+      try {
+        const uploadRes = await uploadInvoiceFile(file);
+        if (uploadRes.data && uploadRes.data.link) {
+          fileUrl = uploadRes.data.link.startsWith('http')
+            ? uploadRes.data.link
+            : `http://localhost:3001${uploadRes.data.link}`;
+        }
+      } catch (uploadErr) {
+        console.error('Failed to upload file to server:', uploadErr);
+      }
+      
+      const li = (inv.lineItems || []);
+      const lines = li.length
+        ? li.map(it => `• ${it.name} x${it.qty} @ ₹${Number(it.rate).toLocaleString('en-IN')} = ₹${(it.qty * Number(it.rate)).toLocaleString('en-IN')}`).join('\n')
+        : `Total items: ${inv.items}`;
+      let msg = `🌸 *Anyaa Textiles* 🌸\nInvoice: *${inv.id}*\nDate: ${inv.date || ''}\nCustomer: ${inv.customer}\n\n${lines}\n\n*Total: ₹${Number(inv.amount).toLocaleString('en-IN')}*\nPayment: ${inv.payment}\n\nThank you for shopping! 💐`;
+      
+      if (fileUrl) {
+        msg += `\n\nView the invoice: ${fileUrl}`;
+      }
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Invoice ${inv.id}`,
+          text: msg
+        });
+      } else {
+        // Fallback: download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(file);
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Copy summary to clipboard
+        try {
+          await navigator.clipboard.writeText(msg);
+        } catch (err) {
+          console.error(err);
+        }
+        
+        // Open WhatsApp
+        const ph = (inv.phone || '').replace(/\D/g, '');
+        window.open(ph ? `https://wa.me/91${ph}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        
+        alert(`Invoice ${format.toUpperCase()} downloaded successfully and stored on server!\n\nWe have copied the invoice summary with the server link to your clipboard and opened WhatsApp. You can paste the text and attach the downloaded file there.`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to share invoice as ${format.toUpperCase()}.`);
+    }
+    setSharing(null);
+  };
 
   const handleDelete = async (inv) => {
     if (!window.confirm(`Delete invoice ${inv.id}?`)) return;
@@ -175,6 +323,11 @@ export default function Invoices() {
         .mact-wa:hover { background: #1aad54; }
         .mact-print { background: #4a90e2; color: #fff; }
         .mact-print:hover { background: #3178c6; }
+        .mact-pdf { background: #e05252; color: #fff; }
+        .mact-pdf:hover { background: #c53c3c; }
+        .mact-img { background: #8b3a6a; color: #fff; }
+        .mact-img:hover { background: #712c54; }
+        .mact-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .mact-close { background: #f5f5f5; color: #555; }
         .mact-close:hover { background: #ffe0e0; color: #c04040; }
 
@@ -265,7 +418,7 @@ export default function Invoices() {
                     <td>
                       <div className="action-cell">
                         <button className="tbl-btn tbl-view" onClick={() => setSelectedInv(inv)}>View</button>
-                        <button className="tbl-btn tbl-wa"   onClick={() => handleWhatsApp(inv)}>WA</button>
+                        <button className="tbl-btn tbl-wa"   onClick={() => handleTableWhatsApp(inv)}>WA</button>
                         {user?.role === 'Admin' && (
                           <button className="tbl-btn tbl-del"  onClick={() => handleDelete(inv)}>Delete</button>
                         )}
@@ -284,14 +437,20 @@ export default function Invoices() {
         <div className="inv-overlay" onClick={() => setSelectedInv(null)}>
           <div className="inv-sheet" onClick={e => e.stopPropagation()}>
             <div className="inv-modal-actions no-print">
-              <button className="mact-btn mact-wa" onClick={() => handleWhatsApp(selectedInv)}>
+              <button className="mact-btn mact-wa" onClick={() => handleWhatsApp(selectedInv)} disabled={!!sharing}>
                 <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                   <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.533 5.849L.057 23.716a.5.5 0 00.612.612l5.867-1.476A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.943 0-3.763-.524-5.33-1.438l-.382-.228-3.483.877.893-3.483-.228-.382A9.952 9.952 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
                 </svg>
-                WhatsApp
+                {sharing === 'pdf' ? 'Uploading PDF...' : 'WhatsApp'}
               </button>
-              <button className="mact-btn mact-print" onClick={handlePrint}>
+              <button className="mact-btn mact-pdf" onClick={() => handleShareFile(selectedInv, 'pdf')} disabled={!!sharing}>
+                📁 {sharing === 'pdf' ? 'Generating PDF...' : 'Share PDF'}
+              </button>
+              <button className="mact-btn mact-img" onClick={() => handleShareFile(selectedInv, 'image')} disabled={!!sharing}>
+                🖼️ {sharing === 'image' ? 'Generating Image...' : 'Share Image'}
+              </button>
+              <button className="mact-btn mact-print" onClick={handlePrint} disabled={!!sharing}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                   <polyline points="6 9 6 2 18 2 18 9"/>
                   <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
@@ -299,7 +458,7 @@ export default function Invoices() {
                 </svg>
                 Print
               </button>
-              <button className="mact-btn mact-close" onClick={() => setSelectedInv(null)}>✕ Close</button>
+              <button className="mact-btn mact-close" onClick={() => setSelectedInv(null)} disabled={!!sharing}>✕ Close</button>
             </div>
             {/* Exact same InvoiceView component used in Billing */}
             <InvoiceView inv={buildViewObj(selectedInv)} />

@@ -26,16 +26,7 @@ export default function Login() {
     }
   };
 
-  // Temp bypass login for testing without DB connection
-  const handleBypassLogin = () => {
-    localStorage.setItem('anyaaUser', JSON.stringify({
-      id: 'admin_bypass',
-      name: 'Admin Bypass',
-      email: 'admin@anyaa.com',
-      role: 'Admin'
-    }));
-    window.location.href = '/dashboard';
-  };
+
 
   return (
     <div className="min-h-screen bg-surface-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
@@ -143,16 +134,7 @@ export default function Login() {
               </button>
             </div>
 
-            {/* TEMP TEST BUTTON */}
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={handleBypassLogin}
-                className="w-full flex justify-center py-2 px-4 border border-rose-300 rounded-xl shadow-sm text-sm font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all"
-              >
-                🛠️ Admin Login (No DB)
-              </button>
-            </div>
+
           </form>
         </div>
       </div>

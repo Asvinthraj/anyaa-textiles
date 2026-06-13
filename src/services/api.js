@@ -37,3 +37,13 @@ export const login = async (email, password) => {
   throw new Error('Invalid credentials');
 };
 
+export const uploadInvoiceFile = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/api/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+

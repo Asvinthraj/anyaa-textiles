@@ -9,8 +9,12 @@
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.5.0",
     "axios": "^1.16.1",
+    "express": "^5.2.1",
+    "html2canvas": "^1.4.1",
     "json-server": "^0.17.4",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",
+    "multer": "^2.1.1",
     "postcss": "^8.5.15",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -25,7 +29,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "server": "json-server --watch db.json --port 3001"
+    "server": "node server.js"
   },
   "eslintConfig": {
     "extends": [

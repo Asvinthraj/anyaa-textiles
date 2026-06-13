@@ -96,7 +96,7 @@
       "name": "Pink Floral Kurti",
       "category": "Kurti",
       "price": 1250,
-      "stock": 2,
+      "stock": 0,
       "minStock": 5,
       "unit": "pieces",
       "taxRate": 5
@@ -107,7 +107,7 @@
       "name": "Silk Saree - Navy Blue",
       "category": "Saree",
       "price": 4500,
-      "stock": 1,
+      "stock": 0,
       "minStock": 3,
       "unit": "pieces",
       "taxRate": 12
@@ -118,7 +118,7 @@
       "name": "Cotton Leggings - XL",
       "category": "Leggings",
       "price": 450,
-      "stock": 4,
+      "stock": 1,
       "minStock": 10,
       "unit": "pieces",
       "taxRate": 5
@@ -151,15 +151,6 @@
     }
   ],
   "bills": [
-    {
-      "id": "INV-2024-0843",
-      "customer": "Fatima Begum",
-      "amount": 7800,
-      "items": 4,
-      "time": "2 hours ago",
-      "status": "completed",
-      "payment": "UPI"
-    },
     {
       "id": "INV-2024-0844",
       "customer": "Anand Textiles",
@@ -498,6 +489,156 @@
           "size": "M",
           "rate": 1250,
           "qty": 1
+        }
+      ]
+    },
+    {
+      "id": "INV-2026-6713",
+      "customer": "Walk-in Customer",
+      "phone": "",
+      "amount": 4500,
+      "items": 1,
+      "time": "Just now",
+      "status": "completed",
+      "payment": "Cash",
+      "date": "28 May 2026, 10:47 pm",
+      "lineItems": [
+        {
+          "name": "Silk Saree - Navy Blue",
+          "category": "Saree",
+          "size": "M",
+          "rate": 4500,
+          "qty": 1,
+          "_productId": 2
+        }
+      ]
+    },
+    {
+      "id": "INV-2026-3390",
+      "customer": "Phoenix ",
+      "phone": "85522666",
+      "amount": 473,
+      "items": 1,
+      "time": "Just now",
+      "status": "completed",
+      "payment": "UPI",
+      "date": "30 May 2026, 12:09 pm",
+      "lineItems": [
+        {
+          "name": "Cotton Leggings - XL",
+          "category": "Leggings",
+          "size": "M",
+          "rate": 450,
+          "qty": 1,
+          "_productId": 3
+        }
+      ],
+      "subtotal": 450,
+      "discountFlat": 0,
+      "discountPercent": 0,
+      "taxRate": 5,
+      "taxAmount": 23
+    },
+    {
+      "id": "INV-2026-MPTPCGNT-801",
+      "customer": "Walk-in Customer",
+      "phone": "",
+      "amount": 3750,
+      "items": 3,
+      "time": "Just now",
+      "status": "completed",
+      "payment": "UPI",
+      "date": "06 Jun 2026, 01:03 am",
+      "lineItems": [
+        {
+          "name": "Pink Floral Kurti",
+          "category": "Kurti",
+          "size": "M",
+          "rate": 1250,
+          "qty": 2,
+          "_productId": 1,
+          "_basePrice": 1250,
+          "variants": [],
+          "_variantId": null
+        },
+        {
+          "name": "Pink Floral Kurti",
+          "category": "Kurti",
+          "size": "M",
+          "rate": 1250,
+          "qty": 1,
+          "_productId": 1
+        }
+      ]
+    },
+    {
+      "id": "INV-2026-5765",
+      "customer": "Asvin",
+      "phone": "8608566172",
+      "amount": 1250,
+      "items": 1,
+      "time": "Just now",
+      "status": "completed",
+      "payment": "UPI",
+      "date": "14 Jun 2026, 12:31 am",
+      "lineItems": [
+        {
+          "name": "Pink Floral Kurti",
+          "category": "Kurti",
+          "size": "M",
+          "rate": 1250,
+          "qty": 1,
+          "_productId": 1
+        }
+      ]
+    },
+    {
+      "id": "INV-2026-7785",
+      "customer": "Asvin",
+      "phone": "8608566172",
+      "amount": 450,
+      "items": 1,
+      "time": "Just now",
+      "status": "completed",
+      "payment": "UPI",
+      "date": "14 Jun 2026, 12:32 am",
+      "lineItems": [
+        {
+          "name": "Cotton Leggings - XL",
+          "category": "Leggings",
+          "size": "M",
+          "rate": 450,
+          "qty": 1,
+          "_productId": 3
+        }
+      ]
+    },
+    {
+      "id": "INV-2026-5348",
+      "customer": "Ashwin",
+      "phone": "8608566172",
+      "amount": 4950,
+      "items": 2,
+      "time": "Just now",
+      "status": "completed",
+      "payment": "UPI",
+      "date": "14 Jun 2026, 12:43 am",
+      "lineItems": [
+        {
+          "name": "Cotton Leggings - XL",
+          "category": "Leggings",
+          "size": "M",
+          "rate": 450,
+          "qty": 1,
+          "_productId": 3
+        },
+        {
+          "name": "Silk Saree - Navy Blue",
+          "category": "Saree",
+          "size": "M",
+          "rate": 4500,
+          "qty": 1,
+          "_productId": 2
         }
       ]
     }
